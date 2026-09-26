@@ -12,6 +12,9 @@ export default async function DashboardPage() {
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Welcome, {user.name ?? user.email}</h1>
         <div className="flex items-center gap-4">
+          <Link href="/societies" className="text-sm underline">
+            Societies
+          </Link>
           {isSuperAdmin(user) && (
             <Link href="/admin" className="text-sm underline">
               Admin panel

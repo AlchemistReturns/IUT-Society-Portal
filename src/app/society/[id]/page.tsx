@@ -51,9 +51,13 @@ export default async function SocietyProfilePage({
   if (!society) notFound();
 
   const staffRoles = ["admin", "executive", "sub_executive"];
-  const isStaff = user.societyRoles.some(
-    (r) => r.societyId === id && staffRoles.includes(r.role)
-  );
+  const myRole = user.societyRoles.find((r) => r.societyId === id)?.role;
+  const isStaff = !!myRole && staffRoles.includes(myRole);
+  const canSeeFinance =
+    myRole === "admin" ||
+    myRole === "executive" ||
+    society.moderator_id === user.id ||
+    user.globalRoles.includes("super_admin");
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
@@ -68,6 +72,11 @@ export default async function SocietyProfilePage({
           {isStaff && (
             <Link href={`/society/${id}/manage`} className="underline">
               Manage
+            </Link>
+          )}
+          {canSeeFinance && (
+            <Link href={`/society/${id}/finance`} className="underline">
+              Finance
             </Link>
           )}
           <Link href="/societies" className="underline">

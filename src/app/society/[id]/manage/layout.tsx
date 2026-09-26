@@ -17,7 +17,6 @@ export default async function ManageLayout({
   const staffRoles = ["admin", "executive", "sub_executive"];
   const myRole = user.societyRoles.find((r) => r.societyId === id)?.role;
   const isStaff = !!myRole && staffRoles.includes(myRole);
-  const isAdmin = myRole === "admin" || user.globalRoles.includes("super_admin");
   if (!isStaff && !user.globalRoles.includes("super_admin")) redirect(`/society/${id}`);
 
   const supabase = await createClient();
@@ -43,11 +42,9 @@ export default async function ManageLayout({
         <Link href={`/society/${id}/manage/profile`} className="underline">
           Profile content
         </Link>
-        {isAdmin && (
-          <Link href={`/society/${id}/manage/finance`} className="underline">
-            Finance
-          </Link>
-        )}
+        <Link href={`/society/${id}/finance`} className="underline">
+          Finance
+        </Link>
         <Link href={`/society/${id}/manage/application-types`} className="underline">
           Application types
         </Link>
