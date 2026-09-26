@@ -14,7 +14,7 @@ export default async function NavBar() {
             href="/dashboard"
             className="bg-gradient-to-br from-[var(--accent-from)] to-[var(--accent-to)] bg-clip-text text-lg font-semibold text-transparent"
           >
-            Society Hub
+            IUT_SMS
           </Link>
           <nav className="hidden gap-4 text-sm text-gray-600 sm:flex">
             <Link href="/dashboard" className="hover:text-[var(--accent-from)]">

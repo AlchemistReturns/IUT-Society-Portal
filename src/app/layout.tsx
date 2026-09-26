@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Society Hub",
-  description: "University society management platform",
+  title: "IUT Society Management System",
+  description: "IUT Society Management System — society profiles, membership, and multi-level application approval workflows for IUT societies.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

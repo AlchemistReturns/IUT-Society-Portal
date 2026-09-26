@@ -42,9 +42,20 @@ export default async function MembersPage({
   const single = <T,>(v: T | T[] | null) => (Array.isArray(v) ? (v[0] ?? null) : v);
 
   const memberOptions = new Map<string, string>();
+  type RoleRow = { roleRowId: string; role: string };
+  const rolesByUser = new Map<string, { email: string; name: string | null; roles: RoleRow[] }>();
   for (const r of roles ?? []) {
-    const u = single(r.user) as { id: string; email: string } | null;
-    if (u) memberOptions.set(u.id, u.email);
+    const u = single(r.user) as { id: string; email: string; name: string | null } | null;
+    if (!u) continue;
+    memberOptions.set(u.id, u.email);
+    const entry = rolesByUser.get(u.id) ?? { email: u.email, name: u.name, roles: [] };
+    entry.roles.push({ roleRowId: r.id, role: r.role });
+    rolesByUser.set(u.id, entry);
+  }
+  const ROLE_ORDER = ["admin", "executive", "sub_executive", "member"];
+  const memberRows = [...rolesByUser.values()].sort((a, b) => a.email.localeCompare(b.email));
+  for (const row of memberRows) {
+    row.roles.sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
   }
 
   return (
@@ -115,28 +126,38 @@ export default async function MembersPage({
       <section>
         <h2 className="mb-3 text-lg font-medium">Roles</h2>
         <div className="flex flex-col gap-2">
-          {(roles ?? []).map((r) => {
-            const u = single(r.user) as { id: string; email: string; name: string | null } | null;
-            return (
-              <div
-                key={r.id}
-                className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm"
-              >
-                <span>
-                  {u?.email ?? "unknown"} —{" "}
-                  <strong>{ROLE_LABELS[r.role] ?? r.role}</strong>
-                </span>
-                {isAdmin && u && (
-                  <form action={removeRole}>
-                    <input type="hidden" name="role_id" value={r.id} />
-                    <input type="hidden" name="society_id" value={id} />
-                    <button className="text-xs text-red-600 underline">Remove</button>
-                  </form>
-                )}
+          {memberRows.map((row) => (
+            <div
+              key={row.email}
+              className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm"
+            >
+              <span>{row.email}</span>
+              <div className="flex flex-wrap gap-1">
+                {row.roles.map((r) => (
+                  <span
+                    key={r.roleRowId}
+                    className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs"
+                  >
+                    {ROLE_LABELS[r.role] ?? r.role}
+                    {isAdmin && (
+                      <form action={removeRole} className="inline">
+                        <input type="hidden" name="role_id" value={r.roleRowId} />
+                        <input type="hidden" name="society_id" value={id} />
+                        <button
+                          type="submit"
+                          aria-label={`Remove ${ROLE_LABELS[r.role] ?? r.role}`}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          ×
+                        </button>
+                      </form>
+                    )}
+                  </span>
+                ))}
               </div>
-            );
-          })}
-          {!roles?.length && <p className="text-sm text-gray-500">No members yet.</p>}
+            </div>
+          ))}
+          {!memberRows.length && <p className="text-sm text-gray-500">No members yet.</p>}
         </div>
       </section>
 
