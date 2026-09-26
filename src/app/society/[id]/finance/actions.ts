@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
 
 export async function addFinanceEntry(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
@@ -32,6 +33,7 @@ export async function addFinanceEntry(formData: FormData) {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/finance`);
+  flashRedirect(`/society/${societyId}/finance`, "Entry added");
 }
 
 export async function deleteFinanceEntry(formData: FormData) {
@@ -42,4 +44,5 @@ export async function deleteFinanceEntry(formData: FormData) {
   const { error } = await supabase.from("finance_entries").delete().eq("id", entryId);
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/finance`);
+  flashRedirect(`/society/${societyId}/finance`, "Entry deleted");
 }

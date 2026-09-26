@@ -1,8 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
+
+const ACTION_LABELS: Record<string, string> = {
+  approve: "Approved",
+  reject: "Rejected",
+  request_changes: "Changes requested",
+};
 
 export async function createApplication(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
@@ -30,7 +36,7 @@ export async function createApplication(formData: FormData) {
     .single();
 
   if (error) throw new Error(error.message);
-  redirect(`/society/${societyId}/applications/${data.id}`);
+  flashRedirect(`/society/${societyId}/applications/${data.id}`, "Draft created");
 }
 
 export async function updateApplication(formData: FormData) {
@@ -46,6 +52,7 @@ export async function updateApplication(formData: FormData) {
     .eq("id", appId);
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/applications/${appId}`);
+  flashRedirect(`/society/${societyId}/applications/${appId}`, "Saved");
 }
 
 export async function submitApplication(formData: FormData) {
@@ -56,6 +63,7 @@ export async function submitApplication(formData: FormData) {
   const { error } = await supabase.rpc("submit_application", { p_app_id: appId });
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/applications/${appId}`);
+  flashRedirect(`/society/${societyId}/applications/${appId}`, "Submitted for review");
 }
 
 export async function reviewApplication(formData: FormData) {
@@ -76,4 +84,5 @@ export async function reviewApplication(formData: FormData) {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/applications/${appId}`);
+  flashRedirect(`/society/${societyId}/applications/${appId}`, ACTION_LABELS[action] ?? "Reviewed");
 }

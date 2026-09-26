@@ -11,16 +11,26 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function GlobalRolesAdminPage() {
   const supabase = await createClient();
-  const { data: roles } = await supabase
-    .from("global_roles")
-    .select("user_id, role, user:users(email,name)")
-    .order("created_at", { ascending: false });
+  const [{ data: roles }, { data: allUsers }] = await Promise.all([
+    supabase
+      .from("global_roles")
+      .select("user_id, role, user:users(email,name)")
+      .order("created_at", { ascending: false }),
+    supabase.from("users").select("email").order("email"),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
+      <datalist id="user-emails">
+        {(allUsers ?? []).map((u) => (
+          <option key={u.email} value={u.email} />
+        ))}
+      </datalist>
+
       <form action={grantGlobalRole} className="flex flex-col gap-3 sm:max-w-md">
         <input
           name="email"
+          list="user-emails"
           placeholder="User email"
           required
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"

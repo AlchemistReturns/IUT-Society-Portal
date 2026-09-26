@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isSocietyStaff } from "@/lib/auth";
 import { updateApplication, submitApplication, reviewApplication } from "../actions";
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -55,9 +55,7 @@ export default async function ApplicationDetailPage({
   const creator = single(app.creator) as { email: string; name: string | null } | null;
   const chain = (app.chain_json ?? []) as ChainLevel[];
 
-  const staffRoles = ["admin", "executive", "sub_executive"];
-  const myRole = user.societyRoles.find((r) => r.societyId === id)?.role;
-  const isStaff = !!myRole && staffRoles.includes(myRole);
+  const isStaff = isSocietyStaff(user, id);
   const canEdit = isStaff && (app.status === "draft" || app.status === "changes_requested");
 
   const { data: canReview } = app.status === "submitted"

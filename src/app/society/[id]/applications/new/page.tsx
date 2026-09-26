@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isSocietyStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createApplication } from "../actions";
 
@@ -12,9 +12,7 @@ export default async function NewApplicationPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const staffRoles = ["admin", "executive", "sub_executive"];
-  const myRole = user.societyRoles.find((r) => r.societyId === id)?.role;
-  if (!myRole || !staffRoles.includes(myRole)) redirect(`/society/${id}/applications`);
+  if (!isSocietyStaff(user, id)) redirect(`/society/${id}/applications`);
 
   const supabase = await createClient();
   const { data: types } = await supabase

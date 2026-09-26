@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
 
 export async function requestMembership(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
@@ -18,4 +19,5 @@ export async function requestMembership(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/societies");
+  flashRedirect("/societies", "Membership request sent");
 }

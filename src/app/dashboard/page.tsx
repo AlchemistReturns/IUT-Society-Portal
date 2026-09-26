@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
-import { signOut } from "../(auth)/actions";
+import { getCurrentUser } from "@/lib/auth";
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  executive: "Executive",
+  sub_executive: "Sub-Executive",
+  member: "Member",
+};
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -9,47 +15,50 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Welcome, {user.name ?? user.email}</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/societies" className="text-sm underline">
-            Societies
-          </Link>
-          {isSuperAdmin(user) && (
-            <Link href="/admin" className="text-sm underline">
-              Admin panel
-            </Link>
-          )}
-          <form action={signOut}>
-            <button className="text-sm underline" type="submit">
-              Sign out
-            </button>
-          </form>
-        </div>
-      </div>
+      <h1 className="mb-8 text-2xl font-semibold">
+        Welcome, <span className="text-[var(--accent-from)]">{user.name ?? user.email}</span>
+      </h1>
 
-      <section className="grid gap-4">
-        <div className="rounded-lg border border-gray-200 p-4">
+      <section className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-gray-200 p-4">
           <h2 className="font-medium">Global roles</h2>
-          <p className="text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-600">
             {user.globalRoles.length ? user.globalRoles.join(", ") : "None"}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h2 className="font-medium">Society roles</h2>
-          <p className="text-sm text-gray-600">
-            {user.societyRoles.length
-              ? user.societyRoles
-                  .map((r) => `${r.role} @ ${r.societyId}`)
-                  .join(", ")
-              : "None yet — request membership in a society to get started."}
-          </p>
-        </div>
-        <div className="rounded-lg border border-gray-200 p-4">
+        <div className="rounded-xl border border-gray-200 p-4">
           <h2 className="font-medium">Email verified</h2>
-          <p className="text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-600">
             {user.universityDomainVerified ? "Yes" : "No — check your inbox"}
           </p>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-medium">Your societies</h2>
+          <Link href="/societies" className="text-sm underline">
+            Browse all societies
+          </Link>
+        </div>
+        <div className="flex flex-col gap-2">
+          {user.societies.map((s) => (
+            <Link
+              key={s.societyId}
+              href={`/society/${s.societyId}`}
+              className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-sm hover:border-[var(--accent-from)]"
+            >
+              <span className="font-medium">{s.societyName}</span>
+              <span className="text-gray-500">
+                {s.roles.map((r) => ROLE_LABELS[r] ?? r).join(", ")}
+              </span>
+            </Link>
+          ))}
+          {!user.societies.length && (
+            <p className="text-sm text-gray-500">
+              Not a member of any society yet — browse societies to request one.
+            </p>
+          )}
         </div>
       </section>
     </main>

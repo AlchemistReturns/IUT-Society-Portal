@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isSocietyStaff, rolesInSociety } from "@/lib/auth";
 
 export default async function SocietyProfilePage({
   params,
@@ -50,12 +50,11 @@ export default async function SocietyProfilePage({
 
   if (!society) notFound();
 
-  const staffRoles = ["admin", "executive", "sub_executive"];
-  const myRole = user.societyRoles.find((r) => r.societyId === id)?.role;
-  const isStaff = !!myRole && staffRoles.includes(myRole);
+  const myRoles = rolesInSociety(user, id);
+  const isStaff = isSocietyStaff(user, id);
   const canSeeFinance =
-    myRole === "admin" ||
-    myRole === "executive" ||
+    myRoles.includes("admin") ||
+    myRoles.includes("executive") ||
     society.moderator_id === user.id ||
     user.globalRoles.includes("super_admin");
 

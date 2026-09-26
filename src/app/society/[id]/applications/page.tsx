@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isSocietyStaff } from "@/lib/auth";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
@@ -20,9 +20,7 @@ export default async function ApplicationsPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const staffRoles = ["admin", "executive", "sub_executive"];
-  const myRole = user.societyRoles.find((r) => r.societyId === id)?.role;
-  const isStaff = !!myRole && staffRoles.includes(myRole);
+  const isStaff = isSocietyStaff(user, id);
 
   const supabase = await createClient();
   const { data: applications } = await supabase

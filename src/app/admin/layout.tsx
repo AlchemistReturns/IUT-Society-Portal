@@ -13,22 +13,22 @@ export default async function AdminLayout({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Super Admin</h1>
-        <Link href="/dashboard" className="text-sm underline">
-          Back to dashboard
-        </Link>
-      </div>
-      <nav className="mb-8 flex gap-4 border-b border-gray-200 pb-4 text-sm">
-        <Link href="/admin/societies" className="underline">
-          Societies
-        </Link>
-        <Link href="/admin/domains" className="underline">
-          Allowed email domains
-        </Link>
-        <Link href="/admin/global-roles" className="underline">
-          Global roles
-        </Link>
+      <h1 className="mb-8 text-2xl font-semibold">Super Admin</h1>
+      <nav className="mb-8 flex flex-wrap gap-2 text-sm">
+        {[
+          ["societies", "Societies"],
+          ["users", "Users"],
+          ["domains", "Allowed email domains"],
+          ["global-roles", "Global roles"],
+        ].map(([slug, label]) => (
+          <Link
+            key={slug}
+            href={`/admin/${slug}`}
+            className="rounded-full border border-[var(--card-border)] px-3 py-1 hover:border-[var(--accent-from)] hover:text-[var(--accent-from)]"
+          >
+            {label}
+          </Link>
+        ))}
       </nav>
       {children}
     </div>

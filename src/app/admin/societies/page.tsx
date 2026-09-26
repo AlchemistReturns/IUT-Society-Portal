@@ -17,7 +17,7 @@ function toSingle(rel: UserRef | UserRef[] | null): UserRef | null {
 export default async function SocietiesAdminPage() {
   const supabase = await createClient();
 
-  const [{ data: societies }, { data: deptHeads }, { data: admins }] =
+  const [{ data: societies }, { data: deptHeads }, { data: admins }, { data: allUsers }] =
     await Promise.all([
       supabase
         .from("societies")
@@ -31,6 +31,7 @@ export default async function SocietiesAdminPage() {
         .from("society_roles")
         .select("society_id, user:users(email,name)")
         .eq("role", "admin"),
+      supabase.from("users").select("email").order("email"),
     ]);
 
   const deptHeadBySociety = new Map(
@@ -46,6 +47,12 @@ export default async function SocietiesAdminPage() {
 
   return (
     <div className="flex flex-col gap-10">
+      <datalist id="user-emails">
+        {(allUsers ?? []).map((u) => (
+          <option key={u.email} value={u.email} />
+        ))}
+      </datalist>
+
       <section>
         <h2 className="mb-3 text-lg font-medium">Create society</h2>
         <form action={createSociety} className="flex flex-col gap-3 sm:max-w-md">
@@ -111,6 +118,7 @@ export default async function SocietiesAdminPage() {
                     <input type="hidden" name="society_id" value={s.id} />
                     <input
                       name="email"
+                      list="user-emails"
                       placeholder="Moderator email"
                       required
                       className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs"
@@ -121,6 +129,7 @@ export default async function SocietiesAdminPage() {
                     <input type="hidden" name="society_id" value={s.id} />
                     <input
                       name="email"
+                      list="user-emails"
                       placeholder="Dept. head email"
                       required
                       className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs"
@@ -131,6 +140,7 @@ export default async function SocietiesAdminPage() {
                     <input type="hidden" name="society_id" value={s.id} />
                     <input
                       name="email"
+                      list="user-emails"
                       placeholder="Admin email"
                       required
                       className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs"

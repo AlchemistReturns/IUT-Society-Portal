@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
 
-function revalidateProfile(societyId: string) {
+function revalidateProfile(societyId: string, message: string): never {
   revalidatePath(`/society/${societyId}/manage/profile`);
   revalidatePath(`/society/${societyId}`);
+  flashRedirect(`/society/${societyId}/manage/profile`, message);
 }
 
 export async function updateMissionVision(formData: FormData) {
@@ -18,7 +20,7 @@ export async function updateMissionVision(formData: FormData) {
     .from("profile_sections")
     .upsert({ society_id: societyId, mission, vision, updated_at: new Date().toISOString() });
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Mission & vision saved");
 }
 
 export async function addActivity(formData: FormData) {
@@ -37,7 +39,7 @@ export async function addActivity(formData: FormData) {
     .from("activities")
     .insert({ society_id: societyId, title, description, images, created_by: user?.id });
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Activity added");
 }
 
 export async function deleteActivity(formData: FormData) {
@@ -46,7 +48,7 @@ export async function deleteActivity(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("activities").delete().eq("id", activityId);
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Activity deleted");
 }
 
 export async function addAchievement(formData: FormData) {
@@ -71,7 +73,7 @@ export async function addAchievement(formData: FormData) {
     .from("achievements")
     .insert({ society_id: societyId, title, description, images, winners, created_by: user?.id });
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Achievement added");
 }
 
 export async function deleteAchievement(formData: FormData) {
@@ -80,7 +82,7 @@ export async function deleteAchievement(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("achievements").delete().eq("id", achievementId);
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Achievement deleted");
 }
 
 export async function addGalleryImage(formData: FormData) {
@@ -94,7 +96,7 @@ export async function addGalleryImage(formData: FormData) {
     .from("gallery_images")
     .insert({ society_id: societyId, image_url: imageUrl, caption });
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Gallery image added");
 }
 
 export async function deleteGalleryImage(formData: FormData) {
@@ -103,7 +105,7 @@ export async function deleteGalleryImage(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("gallery_images").delete().eq("id", imageId);
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Gallery image deleted");
 }
 
 export async function addReport(formData: FormData) {
@@ -120,7 +122,7 @@ export async function addReport(formData: FormData) {
     .from("reports")
     .insert({ society_id: societyId, title, file_url: fileUrl, uploaded_by: user?.id });
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Report added");
 }
 
 export async function deleteReport(formData: FormData) {
@@ -129,7 +131,7 @@ export async function deleteReport(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("reports").delete().eq("id", reportId);
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Report deleted");
 }
 
 export async function addCustomField(formData: FormData) {
@@ -144,7 +146,7 @@ export async function addCustomField(formData: FormData) {
     .from("custom_fields")
     .insert({ society_id: societyId, label, type, value });
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Custom field added");
 }
 
 export async function deleteCustomField(formData: FormData) {
@@ -153,5 +155,5 @@ export async function deleteCustomField(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("custom_fields").delete().eq("id", fieldId);
   if (error) throw new Error(error.message);
-  revalidateProfile(societyId);
+  revalidateProfile(societyId, "Custom field deleted");
 }

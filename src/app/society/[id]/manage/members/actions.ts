@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
 
 export async function decideMembership(formData: FormData) {
   const requestId = String(formData.get("request_id") ?? "");
@@ -15,31 +16,28 @@ export async function decideMembership(formData: FormData) {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/members`);
+  flashRedirect(
+    `/society/${societyId}/manage/members`,
+    approve ? "Member approved" : "Request rejected"
+  );
 }
 
 export async function setRole(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
-  const email = String(formData.get("email") ?? "").trim();
+  const userId = String(formData.get("user_id") ?? "");
   const role = String(formData.get("role") ?? "");
+  if (!userId) throw new Error("Select a member");
 
   const supabase = await createClient();
-  const { data: targetUser, error: lookupError } = await supabase
-    .from("users")
-    .select("id")
-    .eq("email", email)
-    .single();
-  if (lookupError || !targetUser) {
-    throw new Error(`No registered user with email ${email}`);
-  }
-
   const { error } = await supabase
     .from("society_roles")
     .upsert(
-      { society_id: societyId, user_id: targetUser.id, role },
+      { society_id: societyId, user_id: userId, role },
       { onConflict: "user_id,society_id,role" }
     );
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/members`);
+  flashRedirect(`/society/${societyId}/manage/members`, "Role assigned");
 }
 
 export async function removeRole(formData: FormData) {
@@ -50,4 +48,5 @@ export async function removeRole(formData: FormData) {
   const { error } = await supabase.from("society_roles").delete().eq("id", roleRowId);
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/members`);
+  flashRedirect(`/society/${societyId}/manage/members`, "Role removed");
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
 
 const VALID_ROLES = [
   "super_admin",
@@ -34,6 +35,7 @@ export async function grantGlobalRole(formData: FormData) {
     );
   if (error) throw new Error(error.message);
   revalidatePath("/admin/global-roles");
+  flashRedirect("/admin/global-roles", `${role.replace("_", " ")} granted to ${email}`);
 }
 
 export async function revokeGlobalRole(formData: FormData) {
@@ -48,4 +50,5 @@ export async function revokeGlobalRole(formData: FormData) {
     .eq("role", role);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/global-roles");
+  flashRedirect("/admin/global-roles", "Role revoked");
 }

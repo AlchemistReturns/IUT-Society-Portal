@@ -23,7 +23,7 @@ export default async function SocietiesPage() {
       .order("requested_at", { ascending: false }),
   ]);
 
-  const myRoleSocietyIds = new Set(user.societyRoles.map((r) => r.societyId));
+  const myRoleSocietyIds = new Set(user.societies.map((s) => s.societyId));
   const latestRequestBySociety = new Map<string, string>();
   for (const r of myRequests ?? []) {
     if (!latestRequestBySociety.has(r.society_id)) {

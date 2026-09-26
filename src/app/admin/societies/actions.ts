@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flashRedirect } from "@/lib/flash";
 
 async function findUserIdByEmail(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -31,6 +32,7 @@ export async function createSociety(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/societies");
+  flashRedirect("/admin/societies", `${name} created`);
 }
 
 export async function assignModerator(formData: FormData) {
@@ -47,6 +49,7 @@ export async function assignModerator(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/societies");
+  flashRedirect("/admin/societies", `Moderator set to ${email}`);
 }
 
 export async function assignDepartmentHead(formData: FormData) {
@@ -62,6 +65,7 @@ export async function assignDepartmentHead(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/societies");
+  flashRedirect("/admin/societies", `Department Head set to ${email}`);
 }
 
 export async function assignInitialAdmin(formData: FormData) {
@@ -80,6 +84,7 @@ export async function assignInitialAdmin(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/societies");
+  flashRedirect("/admin/societies", `${email} added as admin`);
 }
 
 export async function archiveSociety(formData: FormData) {
@@ -93,4 +98,5 @@ export async function archiveSociety(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/societies");
+  flashRedirect("/admin/societies", "Society archived");
 }
