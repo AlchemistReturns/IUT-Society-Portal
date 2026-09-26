@@ -28,7 +28,7 @@ export default async function MembersPage({
   ] = await Promise.all([
     supabase
       .from("membership_requests")
-      .select("id, requested_at, user:users(email,name)")
+      .select("id, requested_at, user:users!membership_requests_user_id_fkey(email,name)")
       .eq("society_id", id)
       .eq("status", "pending")
       .order("requested_at"),

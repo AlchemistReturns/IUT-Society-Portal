@@ -14,7 +14,7 @@ export default async function GlobalRolesAdminPage() {
   const [{ data: roles }, { data: allUsers }] = await Promise.all([
     supabase
       .from("global_roles")
-      .select("user_id, role, user:users(email,name)")
+      .select("user_id, role, user:users!global_roles_user_id_fkey(email,name)")
       .order("created_at", { ascending: false }),
     supabase.from("users").select("email").order("email"),
   ]);
