@@ -22,7 +22,10 @@ export default async function MembersPage({
   const myRoles = rolesInSociety(user, id);
 
   const supabase = await createClient();
-  const [{ data: pending }, { data: roles }] = await Promise.all([
+  const [
+    { data: pending, error: pendingError },
+    { data: roles, error: rolesError },
+  ] = await Promise.all([
     supabase
       .from("membership_requests")
       .select("id, requested_at, user:users(email,name)")
@@ -53,6 +56,12 @@ export default async function MembersPage({
         </strong>
         . Approve/reject controls only show for an Admin of this specific society.
       </p>
+
+      {(pendingError || rolesError) && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+          Failed to load data: {pendingError?.message ?? rolesError?.message}
+        </p>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-medium">
