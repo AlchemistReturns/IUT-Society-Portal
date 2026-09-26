@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { signOut } from "../(auth)/actions";
 
 export default async function DashboardPage() {
@@ -10,11 +11,18 @@ export default async function DashboardPage() {
     <main className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Welcome, {user.name ?? user.email}</h1>
-        <form action={signOut}>
-          <button className="text-sm underline" type="submit">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-4">
+          {isSuperAdmin(user) && (
+            <Link href="/admin" className="text-sm underline">
+              Admin panel
+            </Link>
+          )}
+          <form action={signOut}>
+            <button className="text-sm underline" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       <section className="grid gap-4">
