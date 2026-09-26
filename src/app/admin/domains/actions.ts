@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { flashRedirect } from "@/lib/flash";
+import { setFlash } from "@/lib/flash";
 
 export async function addDomain(formData: FormData) {
   const domain = String(formData.get("domain") ?? "")
@@ -15,7 +15,7 @@ export async function addDomain(formData: FormData) {
   const { error } = await supabase.from("allowed_email_domains").insert({ domain });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/domains");
-  flashRedirect("/admin/domains", `${domain} added`);
+  await setFlash(`${domain} added`);
 }
 
 export async function removeDomain(formData: FormData) {
@@ -24,5 +24,5 @@ export async function removeDomain(formData: FormData) {
   const { error } = await supabase.from("allowed_email_domains").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/domains");
-  flashRedirect("/admin/domains", "Domain removed");
+  await setFlash("Domain removed");
 }

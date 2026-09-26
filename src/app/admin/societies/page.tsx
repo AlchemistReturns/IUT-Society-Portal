@@ -17,7 +17,7 @@ function toSingle(rel: UserRef | UserRef[] | null): UserRef | null {
 export default async function SocietiesAdminPage() {
   const supabase = await createClient();
 
-  const [{ data: societies }, { data: deptHeads }, { data: admins }, { data: allUsers }] =
+  const [{ data: societies }, { data: deptHeads }, { data: admins }, { data: allUsers }, { data: pendingRequests }] =
     await Promise.all([
       supabase
         .from("societies")
@@ -32,7 +32,18 @@ export default async function SocietiesAdminPage() {
         .select("society_id, user:users(email,name)")
         .eq("role", "admin"),
       supabase.from("users").select("email").order("email"),
+      // Super Admin bypasses RLS here, so this is ground truth for whether
+      // requests actually exist, independent of any admin-role assignment.
+      supabase
+        .from("membership_requests")
+        .select("society_id")
+        .eq("status", "pending"),
     ]);
+
+  const pendingCountBySociety = new Map<string, number>();
+  for (const r of pendingRequests ?? []) {
+    pendingCountBySociety.set(r.society_id, (pendingCountBySociety.get(r.society_id) ?? 0) + 1);
+  }
 
   const deptHeadBySociety = new Map(
     (deptHeads ?? []).map((d) => [d.society_id, toSingle(d.user)])
@@ -110,6 +121,18 @@ export default async function SocietiesAdminPage() {
                   <div>
                     <dt className="text-gray-500">Admins</dt>
                     <dd>{admins.length ? admins.map((a) => a.email).join(", ") : "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-500">Pending requests</dt>
+                    <dd>
+                      {pendingCountBySociety.get(s.id) ? (
+                        <span className="font-medium text-[var(--accent-from)]">
+                          {pendingCountBySociety.get(s.id)}
+                        </span>
+                      ) : (
+                        "0"
+                      )}
+                    </dd>
                   </div>
                 </dl>
 

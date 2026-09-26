@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { flashRedirect } from "@/lib/flash";
+import { setFlash } from "@/lib/flash";
 
 export async function decideMembership(formData: FormData) {
   const requestId = String(formData.get("request_id") ?? "");
@@ -16,10 +16,7 @@ export async function decideMembership(formData: FormData) {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/members`);
-  flashRedirect(
-    `/society/${societyId}/manage/members`,
-    approve ? "Member approved" : "Request rejected"
-  );
+  await setFlash(approve ? "Member approved" : "Request rejected");
 }
 
 export async function setRole(formData: FormData) {
@@ -37,7 +34,7 @@ export async function setRole(formData: FormData) {
     );
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/members`);
-  flashRedirect(`/society/${societyId}/manage/members`, "Role assigned");
+  await setFlash("Role assigned");
 }
 
 export async function removeRole(formData: FormData) {
@@ -48,5 +45,5 @@ export async function removeRole(formData: FormData) {
   const { error } = await supabase.from("society_roles").delete().eq("id", roleRowId);
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/members`);
-  flashRedirect(`/society/${societyId}/manage/members`, "Role removed");
+  await setFlash("Role removed");
 }

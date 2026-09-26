@@ -1,50 +1,21 @@
-"use client";
+import { cookies } from "next/headers";
+import FlashToastClient from "./FlashToastClient";
 
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-
-function Toast({ message, type }: { message: string; type: "success" | "error" }) {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("flash");
-    url.searchParams.delete("flash_type");
-    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-
-    const timer = setTimeout(() => setVisible(false), 3500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <div
-      role="status"
-      className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-4 py-2 text-sm font-medium text-white shadow-lg ${
-        type === "error" ? "bg-red-600" : "bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)]"
-      }`}
-    >
-      {message}
-    </div>
-  );
+function parseFlash(raw: string): { message: string; type: "success" | "error" } | null {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
-function FlashToastWatcher() {
-  const searchParams = useSearchParams();
-  const flash = searchParams.get("flash");
-  const type = searchParams.get("flash_type") === "error" ? "error" : "success";
+export default async function FlashToast() {
+  const store = await cookies();
+  const raw = store.get("flash")?.value;
+  if (!raw) return null;
 
-  if (!flash) return null;
+  const parsed = parseFlash(raw);
+  if (!parsed) return null;
 
-  // Remount on every distinct flash so the auto-hide timer restarts cleanly.
-  return <Toast key={`${flash}:${type}`} message={flash} type={type} />;
-}
-
-export default function FlashToast() {
-  return (
-    <Suspense fallback={null}>
-      <FlashToastWatcher />
-    </Suspense>
-  );
+  return <FlashToastClient message={parsed.message} type={parsed.type} />;
 }

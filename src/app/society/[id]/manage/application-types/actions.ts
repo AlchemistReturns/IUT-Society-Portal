@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { flashRedirect } from "@/lib/flash";
+import { setFlash } from "@/lib/flash";
 
 export async function createApplicationType(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
@@ -19,7 +19,7 @@ export async function createApplicationType(formData: FormData) {
     .insert({ society_id: societyId, name, default_chain_json: chain });
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/application-types`);
-  flashRedirect(`/society/${societyId}/manage/application-types`, `${name} created`);
+  await setFlash(`${name} created`);
 }
 
 export async function archiveApplicationType(formData: FormData) {
@@ -33,5 +33,5 @@ export async function archiveApplicationType(formData: FormData) {
     .eq("id", typeId);
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/manage/application-types`);
-  flashRedirect(`/society/${societyId}/manage/application-types`, "Application type archived");
+  await setFlash("Application type archived");
 }

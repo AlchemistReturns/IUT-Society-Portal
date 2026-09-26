@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser, isSocietyAdmin } from "@/lib/auth";
+import { getCurrentUser, isSocietyAdmin, rolesInSociety } from "@/lib/auth";
 import { decideMembership, setRole, removeRole } from "./actions";
 
 const ASSIGNABLE_ROLES = ["executive", "sub_executive", "admin"];
@@ -17,7 +17,9 @@ export default async function MembersPage({
 }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  const isAdmin = isSocietyAdmin(user, id) || !!user?.globalRoles.includes("super_admin");
+  const isSuperAdmin = !!user?.globalRoles.includes("super_admin");
+  const isAdmin = isSocietyAdmin(user, id) || isSuperAdmin;
+  const myRoles = rolesInSociety(user, id);
 
   const supabase = await createClient();
   const [{ data: pending }, { data: roles }] = await Promise.all([
@@ -44,6 +46,14 @@ export default async function MembersPage({
 
   return (
     <div className="flex flex-col gap-10">
+      <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500">
+        Signed in as <strong>{user?.email}</strong> — your role here:{" "}
+        <strong>
+          {isSuperAdmin ? "Super Admin (global)" : myRoles.length ? myRoles.join(", ") : "none"}
+        </strong>
+        . Approve/reject controls only show for an Admin of this specific society.
+      </p>
+
       <section>
         <h2 className="mb-3 text-lg font-medium">
           Pending membership requests

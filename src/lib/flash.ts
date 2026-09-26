@@ -1,10 +1,13 @@
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
-// Server-action helper: call after a mutation to bounce back to `path` with
-// a one-shot flash message, rendered by <FlashToast/> in the root layout.
-export function flashRedirect(path: string, message: string, type: "success" | "error" = "success"): never {
-  const url = new URL(path, "http://internal");
-  url.searchParams.set("flash", message);
-  url.searchParams.set("flash_type", type);
-  redirect(`${url.pathname}${url.search}`);
+// Cookie-based flash message: survives redirects reliably and doesn't
+// depend on the client picking up a query-string-only URL change (which
+// Next's router does not consistently surface via useSearchParams when the
+// pathname is unchanged). Read back by <FlashToast/> in the root layout.
+export async function setFlash(message: string, type: "success" | "error" = "success") {
+  const store = await cookies();
+  store.set("flash", JSON.stringify({ message, type }), {
+    path: "/",
+    maxAge: 5,
+  });
 }
