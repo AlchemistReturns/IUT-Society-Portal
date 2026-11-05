@@ -1,14 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isSocietyAdmin, rolesInSociety } from "@/lib/auth";
+import ManageSection, { EmptyState } from "@/components/ManageSection";
 import { decideMembership, setRole, removeRole } from "./actions";
 
 const ASSIGNABLE_ROLES = ["executive", "sub_executive", "admin"];
 const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
+  admin: "President / Admin",
   executive: "Executive",
   sub_executive: "Sub-Executive",
   member: "Member",
 };
+const ROLE_STYLES: Record<string, string> = {
+  admin: "bg-[var(--accent-from)] text-white",
+  executive: "bg-emerald-100 text-emerald-900",
+  sub_executive: "bg-amber-100 text-amber-900",
+  member: "bg-gray-100 text-gray-700",
+};
+
+const initial = (name: string | null, email: string) => (name ?? email).charAt(0).toUpperCase();
 
 export default async function MembersPage({
   params,
@@ -58,57 +67,74 @@ export default async function MembersPage({
     row.roles.sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
   }
 
+  const stats = [
+    { label: "Members", value: memberRows.length },
+    { label: "Pending requests", value: pending?.length ?? 0 },
+    {
+      label: "Leadership",
+      value: memberRows.filter((m) => m.roles.some((r) => r.role !== "member")).length,
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-10">
-      <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500">
-        Signed in as <strong>{user?.email}</strong> — your role here:{" "}
-        <strong>
-          {isSuperAdmin ? "Super Admin (global)" : myRoles.length ? myRoles.join(", ") : "none"}
-        </strong>
-        . Approve/reject controls only show for an Admin of this specific society.
-      </p>
+    <div className="flex flex-col gap-6">
+      {!isAdmin && (
+        <p className="rounded-lg bg-[var(--accent-soft)] px-4 py-2.5 text-sm text-[var(--accent-from)]">
+          Your role here: <strong>{myRoles.length ? myRoles.join(", ") : "none"}</strong>.
+          Approve, reject and role controls are available to the society admin only.
+        </p>
+      )}
 
       {(pendingError || rolesError) && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+        <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700">
           Failed to load data: {pendingError?.message ?? rolesError?.message}
         </p>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">
-          Pending membership requests
-          {(pending?.length ?? 0) > 0 && (
-            <span className="ml-2 rounded-full bg-[var(--accent-from)]/10 px-2 py-0.5 text-xs font-medium text-[var(--accent-from)]">
-              {pending!.length}
-            </span>
-          )}
-        </h2>
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="card !py-4">
+            <p className="font-serif text-3xl font-semibold text-[var(--accent-from)]">{s.value}</p>
+            <p className="text-xs text-gray-500">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <ManageSection
+        title="Pending membership requests"
+        description="Students who asked to join. Approving makes them a member."
+        count={pending?.length}
+      >
         <div className="flex flex-col gap-2">
           {(pending ?? []).map((r) => {
             const u = single(r.user) as { email: string; name: string | null } | null;
             return (
               <div
                 key={r.id}
-                className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--card-border)] px-3 py-2.5"
               >
-                <span>{u?.email ?? "unknown"}</span>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-semibold text-[var(--accent-from)]">
+                    {initial(u?.name ?? null, u?.email ?? "?")}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{u?.name ?? u?.email ?? "unknown"}</p>
+                    {u?.name && <p className="truncate text-xs text-gray-500">{u.email}</p>}
+                  </div>
+                </div>
                 {isAdmin ? (
                   <div className="flex gap-2">
                     <form action={decideMembership}>
                       <input type="hidden" name="request_id" value={r.id} />
                       <input type="hidden" name="society_id" value={id} />
                       <input type="hidden" name="approve" value="true" />
-                      <button className="rounded-md border px-2 py-1 text-xs text-green-700 hover:border-green-400">
-                        Approve
-                      </button>
+                      <button className="btn btn-primary btn-sm">Approve</button>
                     </form>
                     <form action={decideMembership}>
                       <input type="hidden" name="request_id" value={r.id} />
                       <input type="hidden" name="society_id" value={id} />
                       <input type="hidden" name="approve" value="false" />
-                      <button className="rounded-md border px-2 py-1 text-xs text-red-600 hover:border-red-400">
-                        Reject
-                      </button>
+                      <button className="btn btn-danger btn-sm">Reject</button>
                     </form>
                   </div>
                 ) : (
@@ -117,26 +143,31 @@ export default async function MembersPage({
               </div>
             );
           })}
-          {!pending?.length && (
-            <p className="text-sm text-gray-500">No pending requests.</p>
-          )}
+          {!pending?.length && <EmptyState>No pending requests.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Roles</h2>
+      <ManageSection title="Members and roles" description="Everyone who belongs to this society.">
         <div className="flex flex-col gap-2">
           {memberRows.map((row) => (
             <div
               key={row.email}
-              className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--card-border)] px-3 py-2.5"
             >
-              <span>{row.email}</span>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-semibold text-[var(--accent-from)]">
+                  {initial(row.name, row.email)}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{row.name ?? row.email}</p>
+                  {row.name && <p className="truncate text-xs text-gray-500">{row.email}</p>}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 {row.roles.map((r) => (
                   <span
                     key={r.roleRowId}
-                    className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs"
+                    className={`badge ${ROLE_STYLES[r.role] ?? ROLE_STYLES.member}`}
                   >
                     {ROLE_LABELS[r.role] ?? r.role}
                     {isAdmin && (
@@ -146,7 +177,7 @@ export default async function MembersPage({
                         <button
                           type="submit"
                           aria-label={`Remove ${ROLE_LABELS[r.role] ?? r.role}`}
-                          className="text-gray-400 hover:text-red-600"
+                          className="ml-0.5 opacity-60 hover:opacity-100"
                         >
                           ×
                         </button>
@@ -157,46 +188,38 @@ export default async function MembersPage({
               </div>
             </div>
           ))}
-          {!memberRows.length && <p className="text-sm text-gray-500">No members yet.</p>}
+          {!memberRows.length && <EmptyState>No members yet.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
 
       {isAdmin && (
-        <section>
-          <h2 className="mb-3 text-lg font-medium">Assign role</h2>
-          <p className="mb-2 text-xs text-gray-500">
-            Only approved members can be picked. Assigning &quot;Admin&quot; adds a
-            co-admin — it does not remove existing admins.
-          </p>
+        <ManageSection
+          title="Assign a role"
+          description="Only approved members can be picked. Assigning Admin adds a co-admin; it does not remove existing admins."
+        >
           {memberOptions.size === 0 ? (
-            <p className="text-sm text-gray-500">No approved members yet.</p>
+            <EmptyState>No approved members yet.</EmptyState>
           ) : (
-            <form action={setRole} className="flex gap-2 sm:max-w-lg">
+            <form action={setRole} className="flex flex-col gap-2 sm:flex-row">
               <input type="hidden" name="society_id" value={id} />
-              <select
-                name="user_id"
-                required
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              >
+              <select name="user_id" required className="input">
                 {[...memberOptions.entries()].map(([userId, email]) => (
                   <option key={userId} value={userId}>
                     {email}
                   </option>
                 ))}
               </select>
-              <select name="role" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <select name="role" required className="input sm:w-48">
                 {ASSIGNABLE_ROLES.map((r) => (
                   <option key={r} value={r}>
                     {ROLE_LABELS[r] ?? r}
                   </option>
                 ))}
               </select>
-              <button className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white">
-                Assign
-              </button>
+              <button className="btn btn-primary">Assign</button>
             </form>
           )}
-        </section>
+        </ManageSection>
       )}
     </div>
   );

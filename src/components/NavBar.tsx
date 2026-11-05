@@ -1,48 +1,48 @@
 import Link from "next/link";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { signOut } from "@/app/(auth)/actions";
+import NavTabs from "./NavTabs";
 
 export default async function NavBar() {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const tabs = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/societies", label: "Societies" },
+    { href: "/calendar", label: "Calendar" },
+    ...(isSuperAdmin(user) ? [{ href: "/admin", label: "Admin panel" }] : []),
+  ];
+
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--card-border)] bg-[var(--card-bg)]/80 backdrop-blur print:hidden">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-6">
-          <Link
-            href="/dashboard"
-            className="bg-gradient-to-br from-[var(--accent-from)] to-[var(--accent-to)] bg-clip-text text-lg font-semibold text-transparent"
-          >
-            IUT_SMS
+    <header className="print:hidden">
+      <div className="bg-[var(--brand-900)] py-1.5 font-mono text-[11px] uppercase tracking-widest text-emerald-100/90">
+        <div className="mx-auto max-w-5xl px-4">
+          Islamic University of Technology · Society Management
+        </div>
+      </div>
+      <div className="bg-[var(--brand-700)] text-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
+          <Link href="/dashboard" className="font-serif text-2xl font-semibold tracking-tight">
+            IUT Society Portal
           </Link>
-          <nav className="hidden gap-4 text-sm text-gray-600 sm:flex">
-            <Link href="/dashboard" className="hover:text-[var(--accent-from)]">
-              Dashboard
-            </Link>
-            <Link href="/societies" className="hover:text-[var(--accent-from)]">
-              Societies
-            </Link>
-            {isSuperAdmin(user) && (
-              <Link href="/admin" className="hover:text-[var(--accent-from)]">
-                Admin panel
-              </Link>
-            )}
-          </nav>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-emerald-50/90 sm:inline">
+              {user.name ?? user.email}
+            </span>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-[var(--brand-700)] hover:bg-emerald-50"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-gray-500 sm:inline">
-            {user.name ?? user.email}
-          </span>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded-full border border-[var(--card-border)] px-3 py-1 text-xs text-gray-600 hover:border-[var(--accent-from)] hover:text-[var(--accent-from)]"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
+      </div>
+      <div className="bg-[var(--brand-900)]">
+        <NavTabs items={tabs} />
       </div>
     </header>
   );

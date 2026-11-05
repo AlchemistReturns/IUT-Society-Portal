@@ -12,6 +12,7 @@ export interface CurrentUser {
   name: string | null;
   universityDomainVerified: boolean;
   globalRoles: string[];
+  canRequestMembership: boolean;
   societies: SocietyMembership[];
 }
 
@@ -24,13 +25,27 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   if (!authUser) return null;
 
-  const [{ data: profile }, { data: globalRoles }, { data: societyRoles }] =
+  const [
+    { data: profile },
+    { data: globalRoles },
+    { data: societyRoles },
+    { count: moderatorOf },
+    { count: deptHeadOf },
+  ] =
     await Promise.all([
       supabase.from("users").select("*").eq("id", authUser.id).single(),
       supabase.from("global_roles").select("role").eq("user_id", authUser.id),
       supabase
         .from("society_roles")
         .select("society_id, role, society:societies(name)")
+        .eq("user_id", authUser.id),
+      supabase
+        .from("societies")
+        .select("id", { count: "exact", head: true })
+        .eq("moderator_id", authUser.id),
+      supabase
+        .from("society_department_heads")
+        .select("society_id", { count: "exact", head: true })
         .eq("user_id", authUser.id),
     ]);
 
@@ -54,6 +69,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     name: profile?.name ?? null,
     universityDomainVerified: profile?.university_domain_verified ?? false,
     globalRoles: (globalRoles ?? []).map((r) => r.role),
+    // Only students can request membership; faculty and university
+    // reviewers (global role, moderator, department head) cannot.
+    canRequestMembership: !globalRoles?.length && !moderatorOf && !deptHeadOf,
     societies: [...bySociety.values()],
   };
 }

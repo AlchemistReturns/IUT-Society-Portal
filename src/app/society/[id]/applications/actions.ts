@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { setFlash } from "@/lib/flash";
+import { parseApplicationForm } from "@/lib/application-fields";
 
 const ACTION_LABELS: Record<string, string> = {
   approve: "Approved",
@@ -14,9 +15,8 @@ const ACTION_LABELS: Record<string, string> = {
 export async function createApplication(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
   const typeId = String(formData.get("type_id") ?? "");
-  const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "");
-  if (!title || !typeId) throw new Error("Title and type are required");
+  if (!typeId) throw new Error("Application type is required");
+  const form = parseApplicationForm(formData);
 
   const supabase = await createClient();
   const {
@@ -29,8 +29,7 @@ export async function createApplication(formData: FormData) {
     .insert({
       society_id: societyId,
       type_id: typeId,
-      title,
-      details: { description },
+      ...form,
       created_by: user.id,
     })
     .select("id")
@@ -44,14 +43,10 @@ export async function createApplication(formData: FormData) {
 export async function updateApplication(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
   const appId = String(formData.get("app_id") ?? "");
-  const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "");
+  const form = parseApplicationForm(formData);
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("applications")
-    .update({ title, details: { description } })
-    .eq("id", appId);
+  const { error } = await supabase.from("applications").update(form).eq("id", appId);
   if (error) throw new Error(error.message);
   revalidatePath(`/society/${societyId}/applications/${appId}`);
   await setFlash("Saved");

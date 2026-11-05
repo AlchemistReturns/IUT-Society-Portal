@@ -13,7 +13,7 @@ export default async function LoginPage({
       <h1 className="text-2xl font-semibold">Sign in</h1>
 
       {message && (
-        <p className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">
+        <p className="rounded-md bg-[var(--accent-soft)] px-3 py-2 text-sm text-[var(--accent-from)]">
           {message}
         </p>
       )}

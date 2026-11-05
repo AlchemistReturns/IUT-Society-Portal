@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import ApplicationSummary from "@/components/ApplicationSummary";
 
 const ENTITY_LABELS: Record<string, string> = {
   society_moderator: "Society Moderator",
@@ -75,9 +76,14 @@ export default async function PrintApplicationPage({
       <p className="mb-1 text-sm text-gray-500">
         Submitted by {creator?.name ?? creator?.email}
       </p>
-      <p className="mb-6 whitespace-pre-wrap text-sm text-gray-800">
-        {(app.details as { description?: string })?.description ?? ""}
-      </p>
+      <div className="mb-6">
+        <ApplicationSummary
+          venue={app.venue}
+          startDate={app.start_date}
+          endDate={app.end_date}
+          details={app.details}
+        />
+      </div>
 
       {latest && latest.action === "approve" && (
         <div className="mt-10 flex items-start justify-between border-t pt-6">

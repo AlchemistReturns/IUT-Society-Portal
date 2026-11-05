@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import ManageSection, { EmptyState } from "@/components/ManageSection";
 import { archiveApplicationType } from "./actions";
 import { ChainBuilder } from "./ChainBuilder";
 
@@ -26,46 +27,55 @@ export default async function ApplicationTypesPage({
     .order("created_at", { ascending: false });
 
   return (
-    <div className="flex flex-col gap-10">
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Create application type</h2>
-        <p className="mb-3 text-xs text-gray-500">
-          The chain is locked to this default at submit time — editing it later
-          only affects future applications, not ones already submitted.
-        </p>
-        <ChainBuilder societyId={id} />
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Existing types</h2>
+    <div className="flex flex-col gap-6">
+      <ManageSection
+        title="Existing types"
+        description="Each type has its own approval chain, locked in when an application is submitted."
+        count={types?.length}
+      >
         <div className="flex flex-col gap-3">
           {(types ?? []).map((t) => {
-            const chain = (t.default_chain_json ?? []) as { level_index: number; entity: string }[];
+            const chain = ((t.default_chain_json ?? []) as { level_index: number; entity: string }[])
+              .slice()
+              .sort((a, b) => a.level_index - b.level_index);
             return (
-              <div key={t.id} className="rounded-lg border border-gray-200 p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-medium">{t.name}</h3>
+              <div key={t.id} className="rounded-lg border border-[var(--card-border)] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-serif text-base font-semibold">{t.name}</h3>
                   <form action={archiveApplicationType}>
                     <input type="hidden" name="society_id" value={id} />
                     <input type="hidden" name="type_id" value={t.id} />
-                    <button className="text-xs text-red-600 underline">Archive</button>
+                    <button className="btn btn-danger btn-sm">Archive</button>
                   </form>
                 </div>
-                <ol className="flex flex-wrap gap-2 text-xs text-gray-600">
-                  {chain
-                    .sort((a, b) => a.level_index - b.level_index)
-                    .map((c, i) => (
-                      <li key={i} className="rounded-full border px-2 py-1">
+                <ol className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <li className="badge !bg-gray-100 !text-gray-700">Society admin submits</li>
+                  {chain.map((c, i) => (
+                    <li key={i} className="flex items-center gap-1.5">
+                      <span className="text-gray-400">→</span>
+                      <span className="badge">
                         {i + 1}. {ENTITY_LABELS[c.entity] ?? c.entity}
-                      </li>
-                    ))}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="flex items-center gap-1.5">
+                    <span className="text-gray-400">→</span>
+                    <span className="badge !bg-[var(--accent-from)] !text-white">Approved</span>
+                  </li>
                 </ol>
               </div>
             );
           })}
-          {!types?.length && <p className="text-sm text-gray-500">No application types yet.</p>}
+          {!types?.length && <EmptyState>No application types yet. Create one below.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
+
+      <ManageSection
+        title="Create application type"
+        description="Editing a chain later only affects future applications, not ones already submitted."
+      >
+        <ChainBuilder societyId={id} />
+      </ManageSection>
     </div>
   );
 }

@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-5xl px-4 py-8">
       <h1 className="mb-8 text-2xl font-semibold">
         Welcome, <span className="text-[var(--accent-from)]">{user.name ?? user.email}</span>
       </h1>
@@ -56,7 +56,9 @@ export default async function DashboardPage() {
           ))}
           {!user.societies.length && (
             <p className="text-sm text-gray-500">
-              Not a member of any society yet — browse societies to request one.
+              {user.canRequestMembership
+                ? "Not a member of any society yet — browse societies to request one."
+                : "No society memberships. Your reviews appear under each society's applications."}
             </p>
           )}
         </div>

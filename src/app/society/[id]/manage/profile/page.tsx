@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import ManageSection, { EmptyState } from "@/components/ManageSection";
 import {
   updateMissionVision,
   addActivity,
@@ -12,6 +13,41 @@ import {
   addCustomField,
   deleteCustomField,
 } from "./actions";
+
+function Row({
+  title,
+  sub,
+  action,
+  hidden,
+  thumb,
+}: {
+  title: string;
+  sub?: string | null;
+  action: (formData: FormData) => Promise<void>;
+  hidden: Record<string, string>;
+  thumb?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--card-border)] px-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-3">
+        {thumb && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{title}</p>
+          {sub && <p className="truncate text-xs text-gray-500">{sub}</p>}
+        </div>
+      </div>
+      <form action={action}>
+        {Object.entries(hidden).map(([k, v]) => (
+          <input key={k} type="hidden" name={k} value={v} />
+        ))}
+        <button className="btn btn-danger btn-sm">Delete</button>
+      </form>
+    </div>
+  );
+}
 
 export default async function ProfileManagePage({
   params,
@@ -38,148 +74,118 @@ export default async function ProfileManagePage({
   ]);
 
   return (
-    <div className="flex flex-col gap-10">
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Mission &amp; Vision</h2>
-        <form action={updateMissionVision} className="flex flex-col gap-3 sm:max-w-lg">
+    <div className="flex flex-col gap-6">
+      <ManageSection title="Mission & vision" description="Shown at the top of your public profile.">
+        <form action={updateMissionVision} className="flex flex-col gap-3">
           <input type="hidden" name="society_id" value={id} />
-          <textarea
-            name="mission"
-            placeholder="Mission"
-            defaultValue={profile?.mission ?? ""}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-          <textarea
-            name="vision"
-            placeholder="Vision"
-            defaultValue={profile?.vision ?? ""}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-          <button className="w-fit rounded-md bg-black px-3 py-2 text-sm font-medium text-white">
-            Save
-          </button>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Mission
+            <textarea name="mission" rows={3} defaultValue={profile?.mission ?? ""} className="input" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Vision
+            <textarea name="vision" rows={3} defaultValue={profile?.vision ?? ""} className="input" />
+          </label>
+          <button className="btn btn-primary w-fit">Save changes</button>
         </form>
-      </section>
+      </ManageSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Activities</h2>
-        <form action={addActivity} className="mb-4 flex flex-col gap-2 sm:max-w-lg">
+      <ManageSection
+        title="Activities"
+        description="Events and programs your society has run."
+        count={activities?.length}
+      >
+        <form action={addActivity} className="mb-4 flex flex-col gap-2">
           <input type="hidden" name="society_id" value={id} />
-          <input name="title" placeholder="Title" required className="rounded-md border px-3 py-2 text-sm" />
-          <textarea name="description" placeholder="Description" className="rounded-md border px-3 py-2 text-sm" />
-          <input name="images" placeholder="Image URLs, comma separated" className="rounded-md border px-3 py-2 text-sm" />
-          <button className="w-fit rounded-md border px-3 py-1 text-sm">Add activity</button>
+          <input name="title" placeholder="Title" required className="input" />
+          <textarea name="description" placeholder="Description" rows={2} className="input" />
+          <input name="images" placeholder="Image URLs, comma separated" className="input" />
+          <button className="btn btn-outline w-fit">Add activity</button>
         </form>
         <div className="flex flex-col gap-2">
           {(activities ?? []).map((a) => (
-            <div key={a.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-              <span>{a.title}</span>
-              <form action={deleteActivity}>
-                <input type="hidden" name="society_id" value={id} />
-                <input type="hidden" name="activity_id" value={a.id} />
-                <button className="text-xs text-red-600 underline">Delete</button>
-              </form>
-            </div>
+            <Row key={a.id} title={a.title} sub={a.description} action={deleteActivity} hidden={{ society_id: id, activity_id: a.id }} />
           ))}
+          {!activities?.length && <EmptyState>No activities yet.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Achievements</h2>
-        <form action={addAchievement} className="mb-4 flex flex-col gap-2 sm:max-w-lg">
+      <ManageSection
+        title="Achievements"
+        description="Awards and wins, with winner names."
+        count={achievements?.length}
+      >
+        <form action={addAchievement} className="mb-4 flex flex-col gap-2">
           <input type="hidden" name="society_id" value={id} />
-          <input name="title" placeholder="Title" required className="rounded-md border px-3 py-2 text-sm" />
-          <textarea name="description" placeholder="Description" className="rounded-md border px-3 py-2 text-sm" />
-          <input name="winners" placeholder="Winner names, comma separated" className="rounded-md border px-3 py-2 text-sm" />
-          <input name="images" placeholder="Image URLs, comma separated" className="rounded-md border px-3 py-2 text-sm" />
-          <button className="w-fit rounded-md border px-3 py-1 text-sm">Add achievement</button>
+          <input name="title" placeholder="Title" required className="input" />
+          <textarea name="description" placeholder="Description" rows={2} className="input" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input name="winners" placeholder="Winner names, comma separated" className="input" />
+            <input name="images" placeholder="Image URLs, comma separated" className="input" />
+          </div>
+          <button className="btn btn-outline w-fit">Add achievement</button>
         </form>
         <div className="flex flex-col gap-2">
           {(achievements ?? []).map((a) => (
-            <div key={a.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-              <span>{a.title}</span>
-              <form action={deleteAchievement}>
-                <input type="hidden" name="society_id" value={id} />
-                <input type="hidden" name="achievement_id" value={a.id} />
-                <button className="text-xs text-red-600 underline">Delete</button>
-              </form>
-            </div>
+            <Row key={a.id} title={a.title} sub={a.description} action={deleteAchievement} hidden={{ society_id: id, achievement_id: a.id }} />
           ))}
+          {!achievements?.length && <EmptyState>No achievements yet.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Gallery</h2>
-        <form action={addGalleryImage} className="mb-4 flex gap-2 sm:max-w-lg">
+      <ManageSection title="Gallery" description="Photos from your events." count={gallery?.length}>
+        <form action={addGalleryImage} className="mb-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
           <input type="hidden" name="society_id" value={id} />
-          <input name="image_url" placeholder="Image URL" required className="w-full rounded-md border px-3 py-2 text-sm" />
-          <input name="caption" placeholder="Caption" className="w-full rounded-md border px-3 py-2 text-sm" />
-          <button className="rounded-md border px-3 py-1 text-sm">Add</button>
+          <input name="image_url" placeholder="Image URL" required className="input" />
+          <input name="caption" placeholder="Caption" className="input" />
+          <button className="btn btn-outline">Add</button>
         </form>
         <div className="flex flex-col gap-2">
           {(gallery ?? []).map((g) => (
-            <div key={g.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-              <span className="truncate">{g.caption || g.image_url}</span>
-              <form action={deleteGalleryImage}>
-                <input type="hidden" name="society_id" value={id} />
-                <input type="hidden" name="image_id" value={g.id} />
-                <button className="text-xs text-red-600 underline">Delete</button>
-              </form>
-            </div>
+            <Row key={g.id} title={g.caption || "Untitled image"} sub={g.image_url} thumb={g.image_url} action={deleteGalleryImage} hidden={{ society_id: id, image_id: g.id }} />
           ))}
+          {!gallery?.length && <EmptyState>No images yet.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Reports</h2>
-        <form action={addReport} className="mb-4 flex gap-2 sm:max-w-lg">
+      <ManageSection title="Reports" description="Activity and annual reports (PDF links)." count={reports?.length}>
+        <form action={addReport} className="mb-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
           <input type="hidden" name="society_id" value={id} />
-          <input name="title" placeholder="Title" required className="w-full rounded-md border px-3 py-2 text-sm" />
-          <input name="file_url" placeholder="PDF URL" required className="w-full rounded-md border px-3 py-2 text-sm" />
-          <button className="rounded-md border px-3 py-1 text-sm">Add</button>
+          <input name="title" placeholder="Title" required className="input" />
+          <input name="file_url" placeholder="PDF URL" required className="input" />
+          <button className="btn btn-outline">Add</button>
         </form>
         <div className="flex flex-col gap-2">
           {(reports ?? []).map((r) => (
-            <div key={r.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-              <span>{r.title}</span>
-              <form action={deleteReport}>
-                <input type="hidden" name="society_id" value={id} />
-                <input type="hidden" name="report_id" value={r.id} />
-                <button className="text-xs text-red-600 underline">Delete</button>
-              </form>
-            </div>
+            <Row key={r.id} title={r.title} sub={r.file_url} action={deleteReport} hidden={{ society_id: id, report_id: r.id }} />
           ))}
+          {!reports?.length && <EmptyState>No reports yet.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Custom fields</h2>
-        <form action={addCustomField} className="mb-4 flex flex-col gap-2 sm:max-w-lg sm:flex-row">
+      <ManageSection
+        title="Custom fields"
+        description="Extra labelled info on your profile, for example Founded or Contact."
+        count={customFields?.length}
+      >
+        <form action={addCustomField} className="mb-4 grid gap-2 sm:grid-cols-[1fr_9rem_1fr_auto]">
           <input type="hidden" name="society_id" value={id} />
-          <input name="label" placeholder="Label" required className="w-full rounded-md border px-3 py-2 text-sm" />
-          <select name="type" className="rounded-md border px-3 py-2 text-sm">
+          <input name="label" placeholder="Label" required className="input" />
+          <select name="type" className="input">
             <option value="text">Text</option>
             <option value="richtext">Rich text</option>
             <option value="image">Image URL</option>
           </select>
-          <input name="value" placeholder="Value" className="w-full rounded-md border px-3 py-2 text-sm" />
-          <button className="w-fit rounded-md border px-3 py-1 text-sm">Add</button>
+          <input name="value" placeholder="Value" className="input" />
+          <button className="btn btn-outline">Add</button>
         </form>
         <div className="flex flex-col gap-2">
           {(customFields ?? []).map((f) => (
-            <div key={f.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-              <span>
-                {f.label}: {f.value}
-              </span>
-              <form action={deleteCustomField}>
-                <input type="hidden" name="society_id" value={id} />
-                <input type="hidden" name="field_id" value={f.id} />
-                <button className="text-xs text-red-600 underline">Delete</button>
-              </form>
-            </div>
+            <Row key={f.id} title={f.label} sub={f.value} action={deleteCustomField} hidden={{ society_id: id, field_id: f.id }} />
           ))}
+          {!customFields?.length && <EmptyState>No custom fields yet.</EmptyState>}
         </div>
-      </section>
+      </ManageSection>
     </div>
   );
 }

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, isSocietyStaff } from "@/lib/auth";
-import { updateApplication, submitApplication, reviewApplication } from "../actions";
+import ApplicationFields from "@/components/ApplicationFields";
+import ApplicationSummary from "@/components/ApplicationSummary";
+import StatusBadge from "@/components/StatusBadge";
+import { updateApplication, submitApplication, reviewApplication } from "../../actions";
 
 const ENTITY_LABELS: Record<string, string> = {
   society_moderator: "Society Moderator",
@@ -11,14 +14,6 @@ const ENTITY_LABELS: Record<string, string> = {
   student_welfare: "Student Welfare",
   pro_vc: "Pro-VC",
   vc: "VC",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Draft",
-  submitted: "Submitted",
-  changes_requested: "Changes requested",
-  approved: "Approved",
-  rejected: "Rejected",
 };
 
 type ChainLevel = { level_index: number; entity: string };
@@ -63,12 +58,15 @@ export default async function ApplicationDetailPage({
     : { data: false };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
+    <div className="max-w-3xl">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{app.title}</h1>
-          <p className="text-sm text-gray-500">
-            {type?.name} • by {creator?.email} • {STATUS_LABELS[app.status] ?? app.status}
+          <h1 className="font-serif text-2xl font-semibold">{app.title}</h1>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+            <StatusBadge status={app.status} />
+            <span>
+              {type?.name} · by {creator?.name ?? creator?.email}
+            </span>
           </p>
         </div>
         <div className="flex gap-4 text-sm">
@@ -114,16 +112,14 @@ export default async function ApplicationDetailPage({
         <form action={updateApplication} className="mb-8 flex flex-col gap-3">
           <input type="hidden" name="society_id" value={id} />
           <input type="hidden" name="app_id" value={appId} />
-          <input
-            name="title"
-            defaultValue={app.title}
-            className="rounded-md border px-3 py-2 text-sm"
-          />
-          <textarea
-            name="description"
-            defaultValue={(app.details as { description?: string })?.description ?? ""}
-            rows={6}
-            className="rounded-md border px-3 py-2 text-sm"
+          <ApplicationFields
+            values={{
+              title: app.title,
+              venue: app.venue,
+              start_date: app.start_date,
+              end_date: app.end_date,
+              details: app.details,
+            }}
           />
           <div className="flex gap-2">
             <button className="rounded-md border px-3 py-2 text-sm">Save</button>
@@ -136,8 +132,13 @@ export default async function ApplicationDetailPage({
           </div>
         </form>
       ) : (
-        <div className="mb-8 rounded-lg border border-gray-200 p-4 text-sm">
-          {(app.details as { description?: string })?.description || "No details provided."}
+        <div className="mb-8 rounded-lg border p-4">
+          <ApplicationSummary
+            venue={app.venue}
+            startDate={app.start_date}
+            endDate={app.end_date}
+            details={app.details}
+          />
         </div>
       )}
 
@@ -220,6 +221,6 @@ export default async function ApplicationDetailPage({
           {!history?.length && <p className="text-sm text-gray-500">No activity yet.</p>}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

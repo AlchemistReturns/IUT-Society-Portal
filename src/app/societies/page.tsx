@@ -13,7 +13,7 @@ export default async function SocietiesPage() {
   const [{ data: societies }, { data: myRequests }] = await Promise.all([
     supabase
       .from("societies")
-      .select("id, name, description")
+      .select("id, name, description, moderator_id")
       .is("archived_at", null)
       .order("name"),
     supabase
@@ -32,51 +32,64 @@ export default async function SocietiesPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Societies</h1>
-        <Link href="/dashboard" className="text-sm underline">
-          Back to dashboard
-        </Link>
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-6">
+        <h1 className="font-serif text-3xl font-semibold tracking-tight">Societies</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          {user.canRequestMembership
+            ? "Browse IUT societies and request to join the ones you like."
+            : "Browse IUT societies and their activities."}
+        </p>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         {(societies ?? []).map((s) => {
           const isMember = myRoleSocietyIds.has(s.id);
+          const isModerator = s.moderator_id === user.id;
           const status = latestRequestBySociety.get(s.id);
 
           return (
-            <div
-              key={s.id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
-            >
-              <div>
-                <Link href={`/society/${s.id}`} className="font-medium underline">
-                  {s.name}
-                </Link>
-                {s.description && (
-                  <p className="text-sm text-gray-600">{s.description}</p>
-                )}
+            <div key={s.id} className="card flex flex-col justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-700)] font-serif text-lg font-semibold text-white">
+                  {s.name.charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <Link
+                    href={`/society/${s.id}`}
+                    className="font-serif text-lg font-semibold hover:text-[var(--accent-from)]"
+                  >
+                    {s.name}
+                  </Link>
+                  {s.description && (
+                    <p className="mt-0.5 line-clamp-2 text-sm text-gray-600">{s.description}</p>
+                  )}
+                </div>
               </div>
 
-              {isMember ? (
-                <span className="text-xs text-green-700">Member</span>
-              ) : status === "pending" ? (
-                <span className="text-xs text-gray-500">Request pending</span>
-              ) : (
-                <form action={requestMembership}>
-                  <input type="hidden" name="society_id" value={s.id} />
-                  <button className="rounded-md border px-3 py-1 text-xs">
-                    {status === "rejected" ? "Reapply" : "Request to join"}
-                  </button>
-                </form>
-              )}
+              <div className="flex items-center justify-between">
+                <Link href={`/society/${s.id}`} className="text-sm font-medium text-[var(--accent-from)] hover:underline">
+                  View profile →
+                </Link>
+                {isModerator ? (
+                  <span className="badge">Moderator</span>
+                ) : isMember ? (
+                  <span className="badge">Member</span>
+                ) : !user.canRequestMembership ? null : status === "pending" ? (
+                  <span className="badge !bg-amber-100 !text-amber-900">Request pending</span>
+                ) : (
+                  <form action={requestMembership}>
+                    <input type="hidden" name="society_id" value={s.id} />
+                    <button className="btn btn-outline btn-sm">
+                      {status === "rejected" ? "Reapply" : "Request to join"}
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           );
         })}
-        {!societies?.length && (
-          <p className="text-sm text-gray-500">No societies yet.</p>
-        )}
+        {!societies?.length && <p className="text-sm text-gray-500">No societies yet.</p>}
       </div>
     </main>
   );

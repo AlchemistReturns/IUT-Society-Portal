@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, rolesInSociety } from "@/lib/auth";
@@ -78,115 +77,128 @@ export default async function FinancePage({
     return acc;
   }, []);
 
+  const money = (n: number) => `৳ ${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-gray-400">Finance</p>
-          <h1 className="text-2xl font-semibold">{society?.name}</h1>
+    <div className="flex flex-col gap-6">
+      {!isAdmin && (
+        <p className="rounded-lg bg-[var(--accent-soft)] px-4 py-2.5 text-sm text-[var(--accent-from)]">
+          Read-only view. Only the society admin can add or remove entries.
+        </p>
+      )}
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <SummaryCard label="Total income" value={money(totalIncome)} tone="income" />
+        <SummaryCard label="Total expense" value={money(totalExpense)} tone="expense" />
+        <SummaryCard label="Net balance" value={money(netBalance)} tone={netBalance >= 0 ? "balance" : "expense"} />
+        <SummaryCard
+          label="This month (net)"
+          value={money(currentMonthIncome - currentMonthExpense)}
+          tone={currentMonthIncome - currentMonthExpense >= 0 ? "balance" : "expense"}
+        />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="card">
+          <h2 className="mb-2 font-serif text-base font-semibold">Monthly income vs expense</h2>
+          <MonthlyBarChart data={monthlyData} />
         </div>
-        <Link href={`/society/${id}`} className="text-sm underline">
-          Back to society
-        </Link>
-      </div>
+        <div className="card">
+          <h2 className="mb-2 font-serif text-base font-semibold">Expense by category</h2>
+          <CategoryPieChart data={categoryData} />
+        </div>
+        <div className="card lg:col-span-2">
+          <h2 className="mb-2 font-serif text-base font-semibold">Running balance</h2>
+          <BalanceLineChart data={balanceData} />
+        </div>
+      </section>
 
-      <div className="flex flex-col gap-10">
-        <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <SummaryCard label="Total income" value={totalIncome} accent="income" />
-          <SummaryCard label="Total expense" value={totalExpense} accent="expense" />
-          <SummaryCard label="Net balance" value={netBalance} accent="balance" />
-          <SummaryCard
-            label="This month (net)"
-            value={currentMonthIncome - currentMonthExpense}
-            accent="balance"
-          />
+      {isAdmin && (
+        <section className="card">
+          <h2 className="mb-1 font-serif text-lg font-semibold">Add entry</h2>
+          <p className="mb-4 text-sm text-gray-500">Record income or an expense. Amounts are in BDT.</p>
+          <form action={addFinanceEntry} className="grid gap-2 sm:grid-cols-[8rem_9rem_1fr_10rem] ">
+            <input type="hidden" name="society_id" value={id} />
+            <select name="type" required className="input">
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+            <input name="amount" type="number" step="0.01" min="0" placeholder="Amount" required className="input" />
+            <input name="category" placeholder="Category, e.g. Sponsorship" required className="input" />
+            <input name="date" type="date" required className="input" />
+            <input name="note" placeholder="Note (optional)" className="input sm:col-span-3" />
+            <button className="btn btn-primary">Add entry</button>
+          </form>
         </section>
+      )}
 
-        <section className="grid gap-8 sm:grid-cols-2">
-          <div className="rounded-xl border border-gray-200 p-4">
-            <h2 className="mb-2 text-sm font-medium text-gray-600">Monthly income vs expense</h2>
-            <MonthlyBarChart data={monthlyData} />
+      <section className="card !p-0 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-serif text-lg font-semibold">Entries</h2>
+          <span className="badge">{entries.length}</span>
+        </div>
+        {entries.length === 0 ? (
+          <p className="border-t border-[var(--card-border)] px-5 py-8 text-center text-sm text-gray-500">
+            No entries yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-sm">
+              <thead className="bg-[var(--accent-soft)] text-left font-mono text-[11px] uppercase tracking-wide text-gray-600">
+                <tr>
+                  <th className="px-5 py-2 font-medium">Date</th>
+                  <th className="px-3 py-2 font-medium">Category</th>
+                  <th className="px-3 py-2 font-medium">Note</th>
+                  <th className="px-3 py-2 text-right font-medium">Amount</th>
+                  {isAdmin && <th className="w-20 px-5 py-2" />}
+                </tr>
+              </thead>
+              <tbody>
+                {[...entries].reverse().map((e) => (
+                  <tr key={e.id} className="border-t border-[var(--card-border)]">
+                    <td className="whitespace-nowrap px-5 py-2.5 font-mono text-xs text-gray-600">{e.date}</td>
+                    <td className="px-3 py-2.5 font-medium">{e.category}</td>
+                    <td className="px-3 py-2.5 text-gray-500">{e.note ?? ""}</td>
+                    <td className={`whitespace-nowrap px-3 py-2.5 text-right font-mono ${e.type === "income" ? "text-[var(--accent-from)]" : "text-red-700"}`}>
+                      {e.type === "income" ? "+" : "−"} {money(Number(e.amount))}
+                    </td>
+                    {isAdmin && (
+                      <td className="px-5 py-2.5 text-right">
+                        <form action={deleteFinanceEntry}>
+                          <input type="hidden" name="society_id" value={id} />
+                          <input type="hidden" name="entry_id" value={e.id} />
+                          <button className="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div className="rounded-xl border border-gray-200 p-4">
-            <h2 className="mb-2 text-sm font-medium text-gray-600">Expense by category</h2>
-            <CategoryPieChart data={categoryData} />
-          </div>
-          <div className="rounded-xl border border-gray-200 p-4 sm:col-span-2">
-            <h2 className="mb-2 text-sm font-medium text-gray-600">Running balance</h2>
-            <BalanceLineChart data={balanceData} />
-          </div>
-        </section>
-
-        {isAdmin && (
-          <section>
-            <h2 className="mb-3 text-lg font-medium">Add entry</h2>
-            <form action={addFinanceEntry} className="flex flex-wrap gap-2 sm:max-w-2xl">
-              <input type="hidden" name="society_id" value={id} />
-              <select name="type" required className="rounded-md border px-3 py-2 text-sm">
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-              </select>
-              <input name="amount" type="number" step="0.01" min="0" placeholder="Amount" required className="rounded-md border px-3 py-2 text-sm" />
-              <input name="category" placeholder="Category" required className="rounded-md border px-3 py-2 text-sm" />
-              <input name="date" type="date" required className="rounded-md border px-3 py-2 text-sm" />
-              <input name="note" placeholder="Note" className="rounded-md border px-3 py-2 text-sm" />
-              <button className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white">
-                Add
-              </button>
-            </form>
-          </section>
         )}
-
-        <section>
-          <h2 className="mb-3 text-lg font-medium">Entries</h2>
-          <div className="flex flex-col gap-2">
-            {[...entries].reverse().map((e) => (
-              <div key={e.id} className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm">
-                <span>
-                  {e.date} — {e.category} —{" "}
-                  <span className={e.type === "income" ? "text-green-700" : "text-red-700"}>
-                    {e.type === "income" ? "+" : "-"}
-                    {Number(e.amount).toFixed(2)}
-                  </span>
-                  {e.note && <span className="text-gray-400"> ({e.note})</span>}
-                </span>
-                {isAdmin && (
-                  <form action={deleteFinanceEntry}>
-                    <input type="hidden" name="society_id" value={id} />
-                    <input type="hidden" name="entry_id" value={e.id} />
-                    <button className="text-xs text-red-600 underline">Delete</button>
-                  </form>
-                )}
-              </div>
-            ))}
-            {!entries.length && <p className="text-sm text-gray-500">No entries yet.</p>}
-          </div>
-        </section>
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }
 
 function SummaryCard({
   label,
   value,
-  accent,
+  tone,
 }: {
   label: string;
-  value: number;
-  accent: "income" | "expense" | "balance";
+  value: string;
+  tone: "income" | "expense" | "balance";
 }) {
-  const accentClass =
-    accent === "income"
-      ? "border-l-green-500 text-green-700"
-      : accent === "expense"
-        ? "border-l-red-500 text-red-700"
-        : "border-l-[var(--accent-from)] text-[var(--accent-from)]";
-
+  const color =
+    tone === "expense" ? "text-red-700" : "text-[var(--accent-from)]";
+  const bar = tone === "expense" ? "bg-red-600" : tone === "income" ? "bg-emerald-500" : "bg-[var(--accent-from)]";
   return (
-    <div className={`rounded-xl border border-gray-200 border-l-4 p-4 ${accentClass}`}>
+    <div className="card relative overflow-hidden !py-4">
+      <span className={`absolute inset-y-0 left-0 w-1 ${bar}`} />
       <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-lg font-semibold">{value.toFixed(2)}</p>
+      <p className={`mt-1 font-serif text-xl font-semibold ${color}`}>{value}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { setFlash } from "@/lib/flash";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function requestMembership(formData: FormData) {
   const societyId = String(formData.get("society_id") ?? "");
@@ -12,6 +13,11 @@ export async function requestMembership(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
+
+  const current = await getCurrentUser();
+  if (!current?.canRequestMembership) {
+    throw new Error("Only students can request society membership");
+  }
 
   const { error } = await supabase
     .from("membership_requests")
