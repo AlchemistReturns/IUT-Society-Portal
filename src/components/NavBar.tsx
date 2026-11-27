@@ -11,6 +11,7 @@ export default async function NavBar() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/societies", label: "Societies" },
     { href: "/calendar", label: "Calendar" },
+    ...(user.isReviewer ? [{ href: "/reviews", label: "Reviews" }] : []),
     ...(isSuperAdmin(user) ? [{ href: "/admin", label: "Admin panel" }] : []),
   ];
 

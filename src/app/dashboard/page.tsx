@@ -34,6 +34,16 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {user.isReviewer && (
+        <Link
+          href="/reviews"
+          className="mt-4 flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-sm hover:border-[var(--accent-from)]"
+        >
+          <span className="font-medium">Reviews — pending and reviewed applications</span>
+          <span className="text-gray-500">Open →</span>
+        </Link>
+      )}
+
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-medium">Your societies</h2>
@@ -58,7 +68,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-gray-500">
               {user.canRequestMembership
                 ? "Not a member of any society yet — browse societies to request one."
-                : "No society memberships. Your reviews appear under each society's applications."}
+                : "No society memberships. Your pending and past reviews are under Reviews."}
             </p>
           )}
         </div>

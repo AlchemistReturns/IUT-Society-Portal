@@ -73,7 +73,10 @@ export default async function ApplicationDetailPage({
           <Link href={`/society/${id}/applications/${appId}/print`} className="underline">
             Print
           </Link>
-          <Link href={`/society/${id}/applications`} className="underline">
+          <Link
+            href={isStaff || user.globalRoles.includes("super_admin") ? `/society/${id}/applications` : "/reviews"}
+            className="underline"
+          >
             Back
           </Link>
         </div>

@@ -13,6 +13,8 @@ export interface CurrentUser {
   universityDomainVerified: boolean;
   globalRoles: string[];
   canRequestMembership: boolean;
+  /** Global role holder, society moderator, or department head. */
+  isReviewer: boolean;
   societies: SocietyMembership[];
 }
 
@@ -72,6 +74,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     // Only students can request membership; faculty and university
     // reviewers (global role, moderator, department head) cannot.
     canRequestMembership: !globalRoles?.length && !moderatorOf && !deptHeadOf,
+    isReviewer: !!globalRoles?.length || !!moderatorOf || !!deptHeadOf,
     societies: [...bySociety.values()],
   };
 }
