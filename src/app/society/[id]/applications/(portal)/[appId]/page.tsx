@@ -70,7 +70,7 @@ export default async function ApplicationDetailPage({
           </p>
         </div>
         <div className="flex gap-4 text-sm">
-          <Link href={`/society/${id}/applications/${appId}/print`} className="underline">
+          <Link href={`/society/${id}/applications/${appId}/print?auto=1`} target="_blank" className="underline">
             Print
           </Link>
           <Link

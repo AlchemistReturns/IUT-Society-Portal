@@ -96,15 +96,47 @@ export default function ApplicationFields({
         </Field>
       </div>
 
-      <Field label="Funding sources">
-        <input name="funding_sources" defaultValue={d.funding_sources} className={input} />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Funding sources" hint="sponsorship, registration, booth fees…">
+          <input name="funding_sources" defaultValue={d.funding_sources} className={input} />
+        </Field>
+        <Field label="IUT support for previous edition (BDT)" hint="if any">
+          <input type="number" min="0" name="previous_support" defaultValue={d.previous_support} className={input} />
+        </Field>
+        <Field label="Budget justification: main costs">
+          <input name="cost_main" defaultValue={d.cost_main} placeholder="e.g. venue decoration, prizes, refreshments" className={input} />
+        </Field>
+        <Field label="Budget justification: other costs">
+          <input name="cost_other" defaultValue={d.cost_other} placeholder="e.g. printing, certificates" className={input} />
+        </Field>
+      </div>
       <Field label="Impact on student development & IUT's visibility">
         <textarea name="impact" rows={3} defaultValue={d.impact} className={input} />
+      </Field>
+      <Field label="Enclosures" hint="one per line, e.g. participant list, programme schedule">
+        <textarea name="enclosures" rows={3} defaultValue={d.enclosures} className={input} />
       </Field>
       <Field label="Partner organization" hint="if any — corporate proposals also need the official e-mail to the VC attached">
         <input name="partner" defaultValue={d.partner} className={input} />
       </Field>
+
+      <fieldset className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4">
+        <legend className="px-1 text-sm font-medium">Letter signature block</legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Society short form" hint="e.g. IUTCS">
+            <input name="society_short" defaultValue={d.society_short} className={input} />
+          </Field>
+          <Field label="President: ID · Dept. · Year">
+            <input name="president_info" defaultValue={d.president_info} placeholder="e.g. 210041001 · CSE · 4th" className={input} />
+          </Field>
+          <Field label="President WhatsApp">
+            <input name="whatsapp" defaultValue={d.whatsapp} className={input} />
+          </Field>
+          <Field label="Moderator designation, department">
+            <input name="moderator_title" defaultValue={d.moderator_title} placeholder="e.g. Professor, CSE" className={input} />
+          </Field>
+        </div>
+      </fieldset>
     </div>
   );
 }

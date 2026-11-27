@@ -21,6 +21,14 @@ export interface ApplicationDetails {
   funding_sources?: string;
   impact?: string;
   partner?: string;
+  previous_support?: string; // BDT IUT gave for the previous edition
+  cost_main?: string; // budget justification: main cost areas
+  cost_other?: string; // budget justification: secondary cost areas
+  enclosures?: string; // one enclosure per line
+  society_short?: string; // e.g. IUTCS, used in the signature block
+  president_info?: string; // ID · Dept. · Year
+  whatsapp?: string;
+  moderator_title?: string; // designation, department
 }
 
 export interface ParsedApplicationForm {
@@ -63,6 +71,14 @@ export function parseApplicationForm(fd: FormData): ParsedApplicationForm {
       funding_sources: str(fd, "funding_sources"),
       impact: str(fd, "impact"),
       partner: str(fd, "partner"),
+      previous_support: str(fd, "previous_support"),
+      cost_main: str(fd, "cost_main"),
+      cost_other: str(fd, "cost_other"),
+      enclosures: str(fd, "enclosures"),
+      society_short: str(fd, "society_short"),
+      president_info: str(fd, "president_info"),
+      whatsapp: str(fd, "whatsapp"),
+      moderator_title: str(fd, "moderator_title"),
     },
   };
 }
@@ -78,4 +94,12 @@ export const DETAIL_LABELS: [keyof ApplicationDetails, string][] = [
   ["funding_sources", "Funding sources"],
   ["impact", "Impact on student development & IUT's visibility"],
   ["partner", "Partner organization"],
+  ["previous_support", "IUT support for previous edition (BDT)"],
+  ["cost_main", "Budget justification: main costs"],
+  ["cost_other", "Budget justification: other costs"],
+  ["enclosures", "Enclosures"],
+  ["society_short", "Society short form"],
+  ["president_info", "President (ID · Dept. · Year)"],
+  ["whatsapp", "President WhatsApp"],
+  ["moderator_title", "Moderator designation and department"],
 ];
